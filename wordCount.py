@@ -1,5 +1,6 @@
-import os
 import sys
+import os
+import shutil
 
 # -----------------------------
 # CONFIGURE SPARK ENVIRONMENT
@@ -22,3 +23,16 @@ try:
 except ImportError as e:
     print ("Can not import Spark Modules", e)
     sys.exit(1)
+
+# ---------------
+# LAUNCHER
+# ---------------
+lines = sc.textFile("inputs/words.txt")
+
+countWords = lines.flatMap(lambda line: line.split(" ")) \
+    .map(lambda word: (word, 1)) \
+    .reduceByKey(lambda word1, word2: word1 + word2) \
+    .sortByKey(True)
+
+countWords.saveAsTextFile("output/wordCount")
+print("SPARK WORK SUCCESSFUL :)")
