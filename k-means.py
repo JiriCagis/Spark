@@ -82,7 +82,7 @@ def line_to_vertex(line):
     :return: (x,y)
     """
     item = line.split(",")
-    return (int(item[0]), int(item[1]))
+    return (float(item[0]), float(item[1]))
 
 
 def assign_centroid(vertex, centroids):
@@ -135,7 +135,7 @@ def is_same_centroids(centroids1, centroids2):
 # ---------------
 
 # Run k - means for calculate clusters
-clusters = k_means("inputs/graph.txt", 2)
+clusters = k_means("inputs/graph2.txt", 4)
 
 # Save result to output folder
 for i in range(0, len(clusters), 1):
