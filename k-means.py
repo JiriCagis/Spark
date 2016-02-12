@@ -60,7 +60,19 @@ def k_means(input_file, count):
             .reduceByKey(lambda vertex1, vertex2: (vertex1[0] + vertex2[0], vertex1[1] + vertex2[1])) \
             .collect()
 
-        new_centroids = calculate_new_centroids(sum_vertices_in_clusters, count_vertices_in_clusters)
+        potential_centroids = calculate_potential_centroids(sum_vertices_in_clusters, count_vertices_in_clusters)
+        potential_centroids = sc.broadcast(potential_centroids)
+
+        centroids_distances = vertices.map(
+                lambda vertex: assign_centroid_with_distance(vertex, potential_centroids.value)) \
+            .groupByKey().map(lambda item: (item[0], list(item[1])))
+
+        new_centroids = []
+        for centroid_distances in centroids_distances.take(count):
+            distances = sc.parallelize(centroid_distances[1])
+            vertex_with_distance = distances.reduce(lambda item1, item2: reduce(item1, item2))
+            new_centroids.append(vertex_with_distance[0])
+
         if is_same_centroids(centroids.value, new_centroids):
             centroids = sc.broadcast(new_centroids)
             break
@@ -72,7 +84,24 @@ def k_means(input_file, count):
         .map(lambda x: list(x[1])) \
         .collect()
 
+    print("Centroids:" + str(centroids.value))
+
     return clusters
+
+
+def reduce(vertex_with_distance1, vertex_with_distance2):
+    """
+    Find vertex with minimum distance of centroid
+    :param vertex_with_distance1: ((x,y),distance1)
+    :param vertex_with_distance2: ((x,y),distance2)
+    :return: min vertex with distance
+    """
+    distance1 = vertex_with_distance1[1]
+    distance2 = vertex_with_distance2[1]
+    if distance1 < distance2:
+        return vertex_with_distance1
+    else:
+        return vertex_with_distance2
 
 
 def line_to_vertex(line):
@@ -102,7 +131,24 @@ def assign_centroid(vertex, centroids):
     return (chooseCentroid, (vertex))
 
 
-def calculate_new_centroids(sum_vertices_in_clusters, count_vertices_in_clusters):
+def assign_centroid_with_distance(vertex, centroids):
+    """
+    Function calculate near centroid for vertex
+    :param vertex: (x,y)
+    :param centroids:[(x,y),(x,y),..]
+    :return: (centroid,vertex)
+    """
+    minDistance = sys.maxint
+    chooseCentroid = None
+    for centroid in centroids:
+        distance = math.sqrt(math.pow(vertex[0] - centroid[0], 2) + math.pow(vertex[1] - centroid[1], 2))
+        if distance < minDistance:
+            minDistance = distance
+            chooseCentroid = centroid
+    return (chooseCentroid, (vertex, minDistance))
+
+
+def calculate_potential_centroids(sum_vertices_in_clusters, count_vertices_in_clusters):
     """
     Function calculate new list of centroids from total sum vertices in cluster divide count vertices in cluster.
     Float numbers are round on two decimal place.
@@ -115,7 +161,7 @@ def calculate_new_centroids(sum_vertices_in_clusters, count_vertices_in_clusters
         centroid = sum_vertices_in_cluster[0]
         sum_vertices = sum_vertices_in_cluster[1]
         count_vertices = count_vertices_in_clusters[centroid]
-        cluster = (round(sum_vertices[0] / float(count_vertices), 2), round(sum_vertices[1] / float(count_vertices), 2))
+        cluster = (sum_vertices[0] / float(count_vertices),sum_vertices[1] / float(count_vertices))
         new_clusters.append(cluster)
     return new_clusters
 
@@ -127,15 +173,25 @@ def is_same_centroids(centroids1, centroids2):
     :param centroids2: list of centroids
     :return: True if are lists equally else return False
     """
-    return set(centroids1) == set(centroids2)
+    for i in range(0, len(centroids1), 1):
+        x1 = centroids1[i][0]
+        x2 = centroids2[i][0]
+        if abs(x1 - x2) > 0.5:
+            return False
+        y1 = centroids1[i][1]
+        y2 = centroids2[i][1]
+        if abs(y1 - y2) > 0.5:
+            return False
+        return True
 
 
 # ---------------
 # LAUNCHER
 # ---------------
 
+
 # Run k - means for calculate clusters
-clusters = k_means("inputs/graph2.txt", 4)
+clusters = k_means("inputs/graph3.txt", 5)
 
 # Save result to output folder
 for i in range(0, len(clusters), 1):
