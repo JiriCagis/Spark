@@ -9,12 +9,12 @@ Spark is designed to cover a wide range of workloads such as batch applications,
 </p>
 
 <h3> Word counter </h3>
-This example show as hadoop framework working. Hadoop use mapreduce algorithm than divide task to dwo part.
-In first part map algorithm go through all lines text and individually word save to map and second part reduce algorithm sum occurrence word in  text.
+This example show as Spark framework working. Spark divide calculate to two part.
+In first part map algorithm go through all lines text and individually word save to map and second part filter algorithm sum occurrence word in  text.
 <div>
 <b>Example:</b><br>
-- <u> Mapper </u><br> INPUT: ahoj svete ahoj svete <br>OUTPUT: [ahoj,1] [svete,1] [ahoj,1] <br>
-- <u> Reducer</u><br>INPUT: [ahoj,1,1] <br> OUTPUT: [ahoj,2] <br>
+- <u> Map </u><br> INPUT: ahoj svete ahoj svete <br>OUTPUT: [ahoj,1] [svete,1] [ahoj,1] <br>
+- <u> Filter</u><br>INPUT: [ahoj,1,1] <br> OUTPUT: [ahoj,2] <br>
 </div>
 
 <h3> Inverted Indexing </h3>
