@@ -1,0 +1,4 @@
+Substitution column with name in data set:
+Iris-setosa - 1
+Iris-versicolor - 2
+Iris-virginica - 3
